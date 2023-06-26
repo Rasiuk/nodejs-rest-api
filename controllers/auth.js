@@ -45,7 +45,7 @@ async function login(req, res, next) {
       token,
       user: {
         email: user.email,
-        password: user.password,
+        subscription: user.subscription,
       },
     });
     res.end();
@@ -55,13 +55,17 @@ async function login(req, res, next) {
 }
 async function getCurrent(req, res, next) {
   const { email } = req.user;
-  res.json({ email });
+  const user = await User.findOne({ email });
+  res.json({
+    email: user.email,
+    subscription: user.subscription,
+  });
 }
 async function logout(req, res) {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: "" });
 
-  res.json({
+  res.status(204).json({
     message: "Logout success",
   });
 }

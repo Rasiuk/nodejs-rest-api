@@ -15,7 +15,6 @@ const authenticate = async (req, res, next) => {
     const user = await User.findById(id);
     console.log(user);
     if (!user || !user.token || user.token !== token) {
-      console.log(`error in 2 if token`);
       next(HttpError(401));
     }
     req.user = user;
