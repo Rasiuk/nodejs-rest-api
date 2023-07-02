@@ -2,7 +2,14 @@ const bcrypt = require("bcrypt");
 const { User } = require("../models/user");
 const { ref } = require("joi");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
+const path = require("path");
+
 const { SECRET_KEY } = process.env;
+const avatarsDir = path.join(__dirname, "../", "public", "avatars");
+
 async function register(req, res, next) {
   const user = {
     email: req.body.email,
@@ -10,14 +17,23 @@ async function register(req, res, next) {
   };
   try {
     const currentUser = await User.findOne({ email: user.email });
+
     if (currentUser !== null) {
       return res.status(409).json({ message: "Email in use" });
     }
-    user.password = await bcrypt.hash(user.password, 10);
-    await User.create(user);
+    const avatarURL = gravatar.url(user.email, { d: "robohash" });
+
+    const hashPass = (user.password = await bcrypt.hash(user.password, 10));
+    const newUser = await User.create({
+      ...req.body,
+      password: hashPass,
+      avatarURL,
+    });
+
+    // await User.create(user);
     res.status(201).json({
       user: {
-        email: user.email,
+        email: newUser.email,
         subscription: "starter",
       },
     });
@@ -69,4 +85,29 @@ async function logout(req, res) {
     message: "Logout success",
   });
 }
-module.exports = { register, login, getCurrent, logout };
+async function updateAvatar(req, res, next) {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
+  const filename = `${_id}_${originalname}`;
+  console.log(tempUpload);
+  try {
+    const image = await Jimp.read(tempUpload);
+    await image.resize(250, 250).write(path.join(avatarsDir, filename));
+
+    const avatarURL = path.join("avatars", filename);
+    await User.findByIdAndUpdate(_id, { avatarURL });
+
+    res.json({
+      avatarURL,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update avatar" });
+  } finally {
+    fs.unlink(tempUpload, (err) => {
+      if (err) console.error(err);
+    });
+  }
+}
+
+module.exports = { register, login, getCurrent, logout, updateAvatar };
