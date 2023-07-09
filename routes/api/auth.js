@@ -24,3 +24,11 @@ router.patch(
   AuthController.updateAvatar
 );
 module.exports = router;
+//Verify user
+router.get("/verify/:verificationToken", AuthController.verifyEmail);
+//Resend verify
+router.post(
+  "/verify",
+  validateBody(schemas.emailShema),
+  AuthController.resendVerify
+);
