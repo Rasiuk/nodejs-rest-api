@@ -6,9 +6,7 @@ const gravatar = require("gravatar");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
 const path = require("path");
-// const Email = require("../services/emailService");
 const { nanoid } = require("nanoid");
-// const { sgMail } = require("../helpers/sendMail");
 const sgMail = require("@sendgrid/mail");
 const { json } = require("express");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -45,24 +43,23 @@ async function register(req, res, next) {
       html: ` <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" bgcolor="#1a82e2" style="border-radius: 6px;">
-                          <a href="http://localhost:3000/users/verify/${verificationToken}" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">Click to verify</a>
+                          <a href="http://localhost:3000/users/verify/${user.verificationToken}" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">Click to verify</a>
                         </td></table>`,
     };
     sgMail
       .send(msg)
       .then(() => {
+        res.status(201).json({
+          user: {
+            email: newUser.email,
+            subscription: "starter",
+          },
+        });
         console.log("Email sent");
       })
       .catch((error) => {
         console.error(error);
       });
-
-    res.status(201).json({
-      user: {
-        email: newUser.email,
-        subscription: "starter",
-      },
-    });
   } catch (error) {
     next(error);
   }
@@ -149,6 +146,9 @@ async function verifyEmail(req, res, next) {
     if (!user) {
       return res.status(404).json({ message: "User is not Foud" });
     }
+    if (user.verify) {
+      return res.status(404);
+    }
     await User.findByIdAndUpdate(user._id, {
       verify: true,
       verificationToken: null,
@@ -189,7 +189,7 @@ async function resendVerify(req, res, next) {
       .send(msg)
       .then(() => {
         res.json({ message: "Verification email sent" });
-        console.log("Email sent");
+        console.log("Email sent again");
       })
       .catch((error) => {
         console.error(error);
