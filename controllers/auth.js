@@ -43,7 +43,7 @@ async function register(req, res, next) {
       html: ` <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" bgcolor="#1a82e2" style="border-radius: 6px;">
-                          <a href="http://localhost:3000/users/verify/${user.verificationToken}" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">Click to verify</a>
+                          <a href="http://localhost:3000/users/verify/${newUser.verificationToken}" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;">Click to verify</a>
                         </td></table>`,
     };
     sgMail
@@ -153,7 +153,7 @@ async function verifyEmail(req, res, next) {
       verify: true,
       verificationToken: null,
     });
-    res.json("Verification successful");
+    res.json({ message: "Verification successful" });
   } catch (error) {
     next(error);
   }
